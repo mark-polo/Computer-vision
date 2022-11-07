@@ -1,0 +1,69 @@
+import cv2 as cv
+import dlib
+from scipy.spatial import distance
+import numpy as np
+
+landmarks_file = "/Users/mark/Documents/general/machine learning/Computer vision /Computer vision projects /drowsy/shape_predictor_68_face_landmarks.dat"
+
+detector = dlib.get_frontal_face_detector()
+predictor = dlib.shape_predictor(landmarks_file)
+
+cap = cv.VideoCapture(0)
+cap.set(3, 1600)
+cap.set(4, 700)
+dbeaeb_tresh = 42.0
+
+def calculate_DBEBAE(eyebrow, eye):
+    '''
+        Here calculating Distance Between Eyebrow And Eye
+
+        First calculating length between eyebrow and eye with a raised eyebrow
+
+        Second calculating max values
+    '''
+    A = distance.euclidean(eyebrow[1], eye[1])
+    return np.max(A)
+
+while True:
+    _, frame = cap.read()
+    frame = cv.flip(frame, 1, 1)
+    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+
+    reacts = detector(gray, 0)
+
+    leftEye = []
+    leftEyebrow = []
+
+    for (_, react) in enumerate(reacts):
+        shape = predictor(gray, react)
+
+        for le in range(36, 40):
+            X = shape.part(le).x
+            Y = shape.part(le).y
+            cv.circle(frame, (X, Y), 2, (0, 255, 0), -1)
+
+            leftEye.append(Y)
+
+        for leb in range(17, 22):
+            X = shape.part(leb).x
+            Y = shape.part(leb).y
+            cv.circle(frame, (X, Y), 2, (0, 255, 0), -1)
+
+            leftEyebrow.append(Y)
+
+        dbeaeb = calculate_DBEBAE(leftEyebrow, leftEye)
+
+        if dbeaeb >= dbeaeb_tresh:
+            cv.putText(frame,f"U r The Rock Dwayne Jonson",(50,600),cv.FONT_HERSHEY_SIMPLEX,2,(0,255,0),2)
+            cv.putText(frame,f"Distance : {dbeaeb}",(700,100),cv.FONT_HERSHEY_SIMPLEX,2,(0,0,255),2)	
+
+    
+    cv.imshow("Facial Mapping", frame)
+
+    k = cv.waitKey(1) & 0xFF
+
+    if k == 27:
+        break
+
+cap.release()
+cv.destroyAllWindows()

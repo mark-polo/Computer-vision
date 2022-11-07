@@ -1,0 +1,28 @@
+import cv2 as cv
+
+cap = cv.VideoCapture(0)
+cap.set(3, 900)
+cap.set(4, 600)
+
+cascade_path = "/Users/mark/Documents/general/machine learning/Computer vision /Computer vision projects /haarcascades/haarcascade_smile.xml"
+
+cascade = cv.CascadeClassifier(cascade_path)
+
+while True:
+    _, frame = cap.read()
+
+    frame = cv.flip(frame, 1, 1)
+
+    smile_detection = cascade.detectMultiScale(frame, 1.1, 10)
+
+    for (x, y, w, h) in smile_detection:
+        cv.rectangle(frame, (x, y), (x + w, y +h), (0,255, 0), thickness=2)
+
+    cv.imshow("Smile", frame)
+
+    if cv.waitKey(1) & 0xFF == 27:
+        break
+
+
+cap.release
+cv.destroyAllWindows()

@@ -1,0 +1,58 @@
+import cv2 as cv
+from tensorflow.keras.models import load_model
+import numpy as np
+
+model = load_model("face detection/masks.h5")
+
+size = 2
+
+label_dict = {0: "Without mask", 1: "With mask"}
+color_dict = {0:(0,0,255),1:(0,255,0)}
+cascade = cv.CascadeClassifier("face detection/haar_face.xml")
+
+cap = cv.VideoCapture(0)
+
+while True:
+    _ , frame = cap.read()
+    frame = cv.flip(frame, 1, 1)
+    w = int(frame.shape[1] // size)
+    h = int(frame.shape[0] // size)
+
+    dim = (w, h)
+
+    res = cv.resize(frame, dim)
+
+    face = cascade.detectMultiScale(res)
+
+    print(face)
+
+    for f in face:
+        (x, y, w, h) = [v * size for v in f]
+
+        x = int(x)
+        y = int(y)
+        w = int(w)
+        h = int(h)
+
+        face_img = frame[y:y+h, x:x+w]
+        resized = cv.resize(face_img,(224,224))
+        normalized = resized/255.0
+        reshaped = np.reshape(normalized,(1,224,224,3))
+        reshaped = np.vstack([reshaped])
+        result = model.predict(reshaped)
+
+        print(result)
+        
+        label = np.argmax(result,axis=1)[0]
+      
+        cv.rectangle(frame,(x,y),(x+w,y+h),color_dict[label],2)
+        cv.rectangle(frame,(x,y-40),(x+w,y),color_dict[label],-1)
+        cv.putText(frame, label_dict[label], (x, y-10),cv.FONT_HERSHEY_SIMPLEX,0.8,(255,255,255),2)
+
+    cv.imshow("Mask Detection", frame)
+    key = cv.waitKey(1)
+    if key == 27: #The Esc key
+        break
+
+cap.release()
+cv.destroyAllWindows()
